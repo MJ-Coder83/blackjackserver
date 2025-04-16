@@ -1,5 +1,6 @@
 FROM --platform=linux/amd64 ubuntu:22.04
 
+# trigger rebuild
 RUN apt-get update && apt-get install -y \
     libx11-6 \
     libxcursor1 \
