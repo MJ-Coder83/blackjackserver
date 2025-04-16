@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     libpulse0 \
     libudev1 \
     ca-certificates \
-    file \   # Added to help with binary inspection
+    file \
     && apt-get clean
 
 # Set working directory
@@ -23,7 +23,7 @@ WORKDIR /app
 
 # Copy all possible server binaries
 COPY card_server.x86_64 /app/card_server.x86_64
-COPY card_server.arm64 /app/card_server.arm64 || true  # Won't fail if file doesn't exist
+COPY card_server.arm64 /app/card_server.arm64 || true
 
 # Copy PCK file
 COPY card_server.pck /app/
