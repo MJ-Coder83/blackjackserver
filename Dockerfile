@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy server binary (must be Linux x86_64 binary)
-COPY ./card_server.x86_64 ./card_server
-RUN chmod +x ./card_server
+COPY card_server.x86_64 /app/card_server
+RUN chmod +x /app/card_server
 
 # Run the headless server with the --server flag
 CMD ["./card_server", "--server"]
