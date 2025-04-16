@@ -21,9 +21,11 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy all possible server binaries
+# Copy server binaries - main one is required
 COPY card_server.x86_64 /app/card_server.x86_64
-COPY card_server.arm64 /app/card_server.arm64 || true
+
+# Copy ARM64 binary if it exists (handled in script)
+COPY card_server.arm64* /app/ 2>/dev/null || true
 
 # Copy PCK file
 COPY card_server.pck /app/
@@ -37,9 +39,15 @@ if [ "$ARCH" = "x86_64" ]; then\n\
   chmod +x /app/card_server.x86_64\n\
   exec /app/card_server.x86_64 --server\n\
 elif [ "$ARCH" = "aarch64" ]; then\n\
-  echo "Using ARM64 binary"\n\
-  chmod +x /app/card_server.arm64\n\
-  exec /app/card_server.arm64 --server\n\
+  if [ -f "/app/card_server.arm64" ]; then\n\
+    echo "Using ARM64 binary"\n\
+    chmod +x /app/card_server.arm64\n\
+    exec /app/card_server.arm64 --server\n\
+  else\n\
+    echo "ARM64 binary not found, trying with x86_64 binary"\n\
+    chmod +x /app/card_server.x86_64\n\
+    exec /app/card_server.x86_64 --server\n\
+  fi\n\
 else\n\
   echo "Unsupported architecture: $ARCH"\n\
   exit 1\n\
