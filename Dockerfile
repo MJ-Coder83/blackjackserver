@@ -1,9 +1,4 @@
-# Use multi-platform base image
-FROM --platform=$TARGETPLATFORM ubuntu:22.04
-
-# Set arguments for platform detection
-ARG TARGETPLATFORM
-ARG TARGETARCH
+FROM ubuntu:22.04
 
 # Install Godot dependencies
 RUN apt-get update && apt-get install -y \
@@ -21,11 +16,10 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy server binaries - main one is required
+# Copy server binaries
 COPY card_server.x86_64 /app/card_server.x86_64
-
-# Copy ARM64 binary if it exists (handled in script)
-COPY card_server.arm64* /app/ 2>/dev/null || true
+# Try to copy ARM64 binary but don't fail if it doesn't exist
+COPY *.arm64 /app/ 2>/dev/null || echo "No ARM64 binary found"
 
 # Copy PCK file
 COPY card_server.pck /app/
