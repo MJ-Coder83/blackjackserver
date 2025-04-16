@@ -1,6 +1,11 @@
-FROM --platform=linux/amd64 ubuntu:22.04
+# Use multi-platform base image
+FROM --platform=$TARGETPLATFORM ubuntu:22.04
 
-# Install Godot dependencies (no display needed for headless)
+# Set arguments for platform detection
+ARG TARGETPLATFORM
+ARG TARGETARCH
+
+# Install Godot dependencies
 RUN apt-get update && apt-get install -y \
     libx11-6 \
     libxcursor1 \
@@ -10,14 +15,35 @@ RUN apt-get update && apt-get install -y \
     libpulse0 \
     libudev1 \
     ca-certificates \
+    file \   # Added to help with binary inspection
     && apt-get clean
 
 # Set working directory
 WORKDIR /app
 
-# Copy server binary (must be Linux x86_64 binary)
-COPY card_server.x86_64 /app/card_server
-RUN chmod +x /app/card_server
+# Copy all possible server binaries
+COPY card_server.x86_64 /app/card_server.x86_64
+COPY card_server.arm64 /app/card_server.arm64 || true  # Won't fail if file doesn't exist
 
-# Run the headless server with the --server flag
-CMD ["./card_server", "--server"]
+# Copy PCK file
+COPY card_server.pck /app/
+
+# Create a startup script that selects the correct binary
+RUN echo '#!/bin/bash\n\
+ARCH=$(uname -m)\n\
+echo "Detected architecture: $ARCH"\n\
+if [ "$ARCH" = "x86_64" ]; then\n\
+  echo "Using x86_64 binary"\n\
+  chmod +x /app/card_server.x86_64\n\
+  exec /app/card_server.x86_64 --server\n\
+elif [ "$ARCH" = "aarch64" ]; then\n\
+  echo "Using ARM64 binary"\n\
+  chmod +x /app/card_server.arm64\n\
+  exec /app/card_server.arm64 --server\n\
+else\n\
+  echo "Unsupported architecture: $ARCH"\n\
+  exit 1\n\
+fi' > /app/start.sh && chmod +x /app/start.sh
+
+# Run the startup script
+CMD ["/app/start.sh"]
